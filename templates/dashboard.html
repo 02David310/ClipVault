@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>GrünneMayer's Clips</title>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/dashboard.css">
+</head>
+<body>
+
+<header>
+    <div class="logo">GrünneMayer's <span>Clips</span></div>
+</header>
+
+<div class="container">
+    <div class="stats" id="stats"></div>
+    <div class="filters" id="filters"></div>
+    <button class="filter-btn" onclick="sync()">↻ SYNC</button>
+    <div class="clips-grid" id="grid"></div>
+</div>
+
+<div class="modal" id="modal">
+    <div class="modal-inner">
+        <div class="modal-header">
+            <span class="modal-title" id="modal-title"></span>
+            <button class="modal-close" onclick="closeModal()">✕</button>
+        </div>
+        <div class="modal-player">
+            <iframe id="modal-iframe" allowfullscreen allow="autoplay"></iframe>
+        </div>
+    </div>
+</div>
+
+<script src="/static/dashboard.js"></script>
+</body>
+</html>

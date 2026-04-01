@@ -1,0 +1,15 @@
+# Secrets
+token.json
+client_secrets.json
+
+# Personal data
+data/
+
+# Python cache
+__pycache__/
+*.pyc
+.env
+
+# VS Code
+.vscode/
+import_existing.py
