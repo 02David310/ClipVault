@@ -5,20 +5,14 @@ import os
 import json
 import folder_uploader
 import time
+from supabase import create_client
 
 app = Flask(__name__)
 log_queue = queue.Queue()
 
-DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
-CLIPS_FILE = os.path.join(DATA_DIR, "clips.json")
-
-def run_upload(folder):
-    time.sleep(1)
-    def callback(message):
-        log_queue.put(message)
-    folder_uploader.log_callback = callback
-    folder_uploader.upload_folder(folder)
-    log_queue.put("__DONE__")
+SUPABASE_URL = os.environ.get("SUPABASE_URL")
+SUPABASE_KEY = os.environ.get("SUPABASE_PUBLISHABLE_KEY")
+supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 @app.route("/")
 def home():
@@ -26,10 +20,8 @@ def home():
 
 @app.route("/api/clips")
 def get_clips():
-    if not os.path.exists(CLIPS_FILE):
-        return jsonify([])
-    with open(CLIPS_FILE, "r") as f:
-        return jsonify(json.load(f))
+    response = supabase.table("clips").select("*").execute()
+    return jsonify(response.data)
 
 @app.route("/api/sync", methods=["POST"])
 def sync():

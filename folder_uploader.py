@@ -92,22 +92,39 @@ def get_or_create_playlist(youtube, game_name):
     return res["id"]
 
 def save_clip(title, game, video_id):
-    clips = []
-    if os.path.exists(CLIPS_FILE):
-        try:
-            with open(CLIPS_FILE, "r") as f:
-                clips = json.load(f)
-        except (json.JSONDecodeError, ValueError):
-            clips = []
-    clips.append({
-        "title": title,
-        "game": game,
-        "video_id": video_id,
-        "url": f"https://youtube.com/watch?v={video_id}",
-        "uploaded_at": datetime.now().isoformat(),
-    })
-    with open(CLIPS_FILE, "w") as f:
-        json.dump(clips, f, indent=4)
+    import os
+    from supabase import create_client
+    
+    url = os.environ.get("SUPABASE_URL")
+    key = os.environ.get("SUPABASE_SECRET_KEY")
+    
+    if url and key:
+        sb = create_client(url, key)
+        sb.table("clips").insert({
+            "title": title,
+            "game": game,
+            "video_id": video_id,
+            "url": f"https://youtube.com/watch?v={video_id}",
+            "uploaded_at": datetime.now().isoformat(),
+        }).execute()
+    else:
+        # fallback to local json
+        clips = []
+        if os.path.exists(CLIPS_FILE):
+            try:
+                with open(CLIPS_FILE, "r") as f:
+                    clips = json.load(f)
+            except (json.JSONDecodeError, ValueError):
+                clips = []
+        clips.append({
+            "title": title,
+            "game": game,
+            "video_id": video_id,
+            "url": f"https://youtube.com/watch?v={video_id}",
+            "uploaded_at": datetime.now().isoformat(),
+        })
+        with open(CLIPS_FILE, "w") as f:
+            json.dump(clips, f, indent=4)
 
 def upload_single(file_path):
     filename = os.path.basename(file_path)
