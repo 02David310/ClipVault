@@ -3,7 +3,7 @@ token.json
 client_secrets.json
 
 # Personal data
-data/
+
 
 # Python cache
 __pycache__/
