@@ -10,9 +10,10 @@ from supabase import create_client
 app = Flask(__name__)
 log_queue = queue.Queue()
 
-SUPABASE_URL = os.environ.get("SUPABASE_URL")
-SUPABASE_KEY = os.environ.get("SUPABASE_PUBLISHABLE_KEY")
-supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+def get_supabase():
+    url = os.environ.get("SUPABASE_URL")
+    key = os.environ.get("SUPABASE_PUBLISHABLE_KEY")
+    return create_client(url, key)
 
 @app.route("/")
 def home():
@@ -20,7 +21,8 @@ def home():
 
 @app.route("/api/clips")
 def get_clips():
-    response = supabase.table("clips").select("*").execute()
+    sb = get_supabase()
+    response = sb.table("clips").select("*").execute()
     return jsonify(response.data)
 
 @app.route("/api/sync", methods=["POST"])
