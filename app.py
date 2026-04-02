@@ -6,47 +6,59 @@ import json
 import folder_uploader
 import time
 from supabase import create_client
-from authlib.integrations.flask_client import OAuth
+from google_auth_oauthlib.flow import Flow
+import google.oauth2.id_token
+import google.auth.transport.requests
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("FLASK_SECRET_KEY")
 app.config['SESSION_COOKIE_SECURE'] = True
-app.config['SESSION_COOKIE_SAMESITE'] = 'None'
-app.config['SESSION_COOKIE_HTTPONLY'] = True
-log_queue = queue.Queue()
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '0'
 
-oauth = OAuth(app)
-google = oauth.register(
-    name='google',
-    client_id=os.environ.get("GOOGLE_CLIENT_ID"),
-    client_secret=os.environ.get("GOOGLE_CLIENT_SECRET"),
-    server_metadata_url='https://accounts.google.com/.well-known/openid-configuration',
-    client_kwargs={'scope': 'openid email profile'}
-)
+log_queue = queue.Queue()
 
 def get_supabase():
     url = os.environ.get("SUPABASE_URL")
     key = os.environ.get("SUPABASE_PUBLISHABLE_KEY")
     return create_client(url, key)
 
+def get_flow():
+    client_secrets = json.loads(os.environ.get("GOOGLE_CLIENT_SECRETS"))
+    flow = Flow.from_client_config(
+        client_secrets,
+        scopes=['openid', 'https://www.googleapis.com/auth/userinfo.email', 
+                'https://www.googleapis.com/auth/userinfo.profile'],
+        redirect_uri=os.environ.get("REDIRECT_URI")
+    )
+    return flow
+
 @app.route("/")
 def home():
-    user = session.get('user')
-    if not user:
+    if not session.get('user'):
         return redirect('/login')
     return render_template("dashboard.html")
 
 @app.route("/login")
 def login():
-    return google.authorize_redirect(url_for('callback', _external=True))
+    flow = get_flow()
+    auth_url, state = flow.authorization_url(prompt='consent')
+    session['oauth_state'] = state
+    session.modified = True
+    return redirect(auth_url)
 
 @app.route("/callback")
 def callback():
-    token = google.authorize_access_token()
-    user = token['userinfo']
+    flow = get_flow()
+    flow.fetch_token(authorization_response=request.url)
+    credentials = flow.credentials
+    request_session = google.auth.transport.requests.Request()
+    id_info = google.oauth2.id_token.verify_oauth2_token(
+        credentials.id_token, request_session
+    )
     session['user'] = {
-        'email': user['email'],
-        'name': user['name'],
+        'email': id_info['email'],
+        'name': id_info.get('name', id_info['email'])
     }
     return redirect('/')
 
