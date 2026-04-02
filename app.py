@@ -49,8 +49,12 @@ def login():
 
 @app.route("/callback")
 def callback():
+    if 'code' not in request.args:
+        return redirect('/login')
+    
     flow = get_flow()
-    flow.fetch_token(authorization_response=request.url)
+    authorization_response = request.url.replace('http://', 'https://')
+    flow.fetch_token(authorization_response=authorization_response)
     credentials = flow.credentials
     request_session = google.auth.transport.requests.Request()
     id_info = google.oauth2.id_token.verify_oauth2_token(
