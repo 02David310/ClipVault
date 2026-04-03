@@ -9,7 +9,7 @@ async function load() {
     const user = await userRes.json();
     if (user) {
         const name = user.name.split(' ')[0];
-        document.querySelector('.logo').innerHTML = `${name}'s&nbsp;&nbsp;<span>Clips</span>`;
+        document.getElementById('username').textContent = name + "'s";
     }
     
     renderStats();
