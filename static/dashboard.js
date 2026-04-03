@@ -4,6 +4,14 @@ let activeGame = 'all';
 async function load() {
     const res = await fetch('/api/clips');
     allClips = await res.json();
+    
+    const userRes = await fetch('/api/me');
+    const user = await userRes.json();
+    if (user) {
+        const name = user.name.split(' ')[0];
+        document.querySelector('.logo').innerHTML = `${name}'s&nbsp;&nbsp;<span>Clips</span>`;
+    }
+    
     renderStats();
     renderFilters();
     renderGrid();
@@ -18,7 +26,6 @@ function renderStats() {
     const total = allClips.length;
     const games = [...new Set(allClips.map(c => c.game))].length;
     const latest = allClips.length ? allClips[allClips.length - 1].uploaded_at.split('T')[0] : '—';
-
     document.getElementById('stats').innerHTML = `
         <div class="stat">
             <div class="stat-label">Total Clips</div>

@@ -84,6 +84,13 @@ def get_clips():
     response = sb.table("clips").select("*").execute()
     return jsonify(response.data)
 
+@app.route("/api/me")
+def me():
+    user = session.get('user')
+    if not user:
+        return jsonify(None)
+    return jsonify(user)
+
 @app.route("/api/sync", methods=["POST"])
 def sync():
     threading.Thread(target=folder_uploader.sync_clips).start()
