@@ -42,12 +42,12 @@ def home():
 @app.route("/login")
 def login():
     flow = get_flow()
-    auth_url, state = flow.authorization_url(prompt='consent')
+    auth_url, state = flow.authorization_url(
+        prompt='consent',
+        code_challenge_method='S256'
+    )
     session['oauth_state'] = state
-    session.modified = True
-    return redirect(auth_url)
-
-    session['oauth_state'] = state
+    session['code_verifier'] = flow.code_verifier
     session.modified = True
     return redirect(auth_url)
 
@@ -57,6 +57,7 @@ def callback():
         return redirect('/login')
     
     flow = get_flow()
+    flow.code_verifier = session.get('code_verifier')
     authorization_response = request.url.replace('http://', 'https://')
     flow.fetch_token(authorization_response=authorization_response)
     credentials = flow.credentials
