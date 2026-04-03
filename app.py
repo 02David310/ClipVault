@@ -81,7 +81,8 @@ def get_clips():
     if not session.get('user'):
         return jsonify([])
     sb = get_supabase()
-    response = sb.table("clips").select("*").execute()
+    user_email = session['user']['email']
+    response = sb.table("clips").select("*").eq("user_id", user_email).execute()
     return jsonify(response.data)
 
 @app.route("/api/me")

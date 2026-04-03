@@ -92,13 +92,13 @@ def get_or_create_playlist(youtube, game_name):
     return res["id"]
 
 def save_clip(title, game, video_id):
-    import os
-    from supabase import create_client
+    user_id = os.environ.get("CLIPVAULT_USER_ID", "klopp.david310@gmail.com")
     
     url = os.environ.get("SUPABASE_URL")
     key = os.environ.get("SUPABASE_SECRET_KEY")
     
     if url and key:
+        from supabase import create_client
         sb = create_client(url, key)
         sb.table("clips").insert({
             "title": title,
@@ -106,9 +106,9 @@ def save_clip(title, game, video_id):
             "video_id": video_id,
             "url": f"https://youtube.com/watch?v={video_id}",
             "uploaded_at": datetime.now().isoformat(),
+            "user_id": user_id,
         }).execute()
     else:
-        # fallback to local json
         clips = []
         if os.path.exists(CLIPS_FILE):
             try:
@@ -122,6 +122,7 @@ def save_clip(title, game, video_id):
             "video_id": video_id,
             "url": f"https://youtube.com/watch?v={video_id}",
             "uploaded_at": datetime.now().isoformat(),
+            "user_id": user_id,
         })
         with open(CLIPS_FILE, "w") as f:
             json.dump(clips, f, indent=4)
