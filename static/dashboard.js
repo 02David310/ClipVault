@@ -109,4 +109,3 @@ document.getElementById('modal').addEventListener('click', function(e) {
 
 load();
 setInterval(load, 30000);
-document.getElementById('username').textContent = name + "'s";
