@@ -30,8 +30,7 @@ def get_flow():
         scopes=['openid', 'https://www.googleapis.com/auth/userinfo.email', 
                 'https://www.googleapis.com/auth/userinfo.profile'],
         redirect_uri=os.environ.get("REDIRECT_URI")
-    )
-    flow.code_challenge_method = None 
+    ) 
     return flow
 
 @app.route("/")
@@ -43,10 +42,11 @@ def home():
 @app.route("/login")
 def login():
     flow = get_flow()
-    auth_url, state = flow.authorization_url(
-        prompt='consent',
-        code_challenge_method=None
-    )
+    auth_url, state = flow.authorization_url(prompt='consent')
+    session['oauth_state'] = state
+    session.modified = True
+    return redirect(auth_url)
+
     session['oauth_state'] = state
     session.modified = True
     return redirect(auth_url)
