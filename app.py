@@ -89,12 +89,6 @@ def sync():
     threading.Thread(target=folder_uploader.sync_clips).start()
     return jsonify({"status": "syncing"})
 
-@app.route("/api/debug")
-def debug():
-    sb = get_supabase()
-    Response = sb.table("clips").select("*").limit(1).execute()
-    return jsonify({"data": Response.data, "count": len(Response.data)})
-
 @app.route("/logs")
 def logs():
     def generate():
