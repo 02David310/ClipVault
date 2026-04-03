@@ -9,7 +9,7 @@ async function load() {
     const user = await userRes.json();
     if (user) {
         const name = user.name.split(' ')[0];
-        document.getElementById('username').textContent = name + "'s";
+        
     }
     
     renderStats();
@@ -109,3 +109,4 @@ document.getElementById('modal').addEventListener('click', function(e) {
 
 load();
 setInterval(load, 30000);
+document.getElementById('username').textContent = name + "'s";
