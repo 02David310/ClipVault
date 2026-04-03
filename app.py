@@ -89,6 +89,10 @@ def sync():
     threading.Thread(target=folder_uploader.sync_clips).start()
     return jsonify({"status": "syncing"})
 
+@app.route("/api/me")
+def me():
+    return jsonify(session.get('user'))
+
 @app.route("/logs")
 def logs():
     def generate():
