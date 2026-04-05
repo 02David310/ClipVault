@@ -76,6 +76,13 @@ def logout():
     session.clear()
     return redirect('/login')
 
+@app.route("/api/client-secrets")
+def client_secrets():
+    secrets = os.environ.get("GOOGLE_CLIENT_SECRETS_DESKTOP")
+    if not secrets:
+        return jsonify({"error": "not found"}), 404
+    return jsonify(json.loads(secrets))
+
 @app.route("/api/setup-config")
 def setup_config():
     email = request.args.get("email")
