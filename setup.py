@@ -9,6 +9,7 @@ from http.server import HTTPServer, BaseHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs
 from google_auth_oauthlib.flow import Flow
 from dotenv import load_dotenv
+os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
 
 print("=== ClipVault Setup ===\n")
 
@@ -38,6 +39,7 @@ class CallbackHandler(BaseHTTPRequestHandler):
 server = HTTPServer(('localhost', 8765), CallbackHandler)
 server_thread = threading.Thread(target=server.handle_request)
 server_thread.start()
+
 
 # Start OAuth flow
 flow = Flow.from_client_secrets_file(
