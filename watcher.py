@@ -5,7 +5,7 @@ from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 import folder_uploader
 
-WATCH_FOLDER = "C:/Users/botow/Videos/NVIDIA"
+WATCH_FOLDER = r"C:\Users\botow\Videos\NVIDIA"
 
 class ClipHandler(FileSystemEventHandler):
     def __init__(self):

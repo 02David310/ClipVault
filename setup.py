@@ -5,6 +5,8 @@ import webbrowser
 import threading
 import json
 import requests
+import winreg
+from dotenv import load_dotenv
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs
 from google_auth_oauthlib.flow import Flow
@@ -12,6 +14,8 @@ from dotenv import load_dotenv
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
 
 print("=== ClipVault Setup ===\n")
+
+
 
 # Ask for NVIDIA folder
 nvidia_folder = input("Enter your NVIDIA clips folder path (e.g. C:/Users/YourName/Videos/NVIDIA): ").strip('"')
@@ -124,6 +128,14 @@ subprocess.run([
     "/rl", "highest",
     "/f"
 ], shell=True)
+
+key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, 
+    r"Software\Microsoft\Windows\CurrentVersion\Run",
+    0, winreg.KEY_SET_VALUE)
+winreg.SetValueEx(key, "ClipVault", 0, winreg.REG_SZ, 
+    f'"{pythonw}" "{watcher_path}"')
+winreg.CloseKey(key)
+print("✓ Auto-start configured!")
 
 print("\n✓ Setup complete! ClipVault will start automatically on next login.")
 input("\nPress Enter to exit...")
