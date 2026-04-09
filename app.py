@@ -3,7 +3,6 @@ import queue
 import threading
 import os
 import json
-import folder_uploader
 import time
 from supabase import create_client
 from google_auth_oauthlib.flow import Flow
@@ -29,8 +28,8 @@ def get_flow():
         client_secrets,
         scopes=['openid', 'https://www.googleapis.com/auth/userinfo.email', 
                 'https://www.googleapis.com/auth/userinfo.profile'],
-        redirect_uri=os.environ.get("REDIRECT_URI")
-    ) 
+        redirect_uri=redirect_uri
+    )
     return flow
 
 @app.route("/")
