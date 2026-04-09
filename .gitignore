@@ -1,15 +1,33 @@
-# Secrets
+# --- Secrets ---
 token.json
 client_secrets.json
-
-# Personal data
-data/
-
-# Python cache
-__pycache__/
-*.pyc
 .env
 
-# VS Code
+# --- Personal / runtime data ---
+data/
+Output/
+watcher.log
+
+# --- Python ---
+__pycache__/
+*.pyc
+*.pyo
+
+# --- Virtual environments ---
+venv/
+.venv/
+env/
+
+# --- Build ---
+build/
+dist/
+
+# --- IDE ---
 .vscode/
-import_existing.py
+
+# --- Logs ---
+*.log
+
+# --- OS ---
+.DS_Store
+Thumbs.db

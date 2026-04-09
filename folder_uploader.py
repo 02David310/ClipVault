@@ -1,24 +1,28 @@
+import os
+import sys
 from dotenv import load_dotenv
-load_dotenv()
+if getattr(sys, 'frozen', False):
+    BASE_DIR = os.path.dirname(sys.executable)
+else:
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+load_dotenv(os.path.join(BASE_DIR, ".env"))
 import json
 from datetime import datetime
-import os
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload
 import time
-import sys
 
 log_callback = None
 
-SCOPES = ["https://www.googleapis.com/auth/youtube.upload",
-          "https://www.googleapis.com/auth/youtube"]
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DATA_DIR = os.path.join(BASE_DIR, "data")
+APPDATA_DIR = os.path.join(os.environ.get('LOCALAPPDATA', ''), 'ClipVault')
+DATA_DIR = os.path.join(APPDATA_DIR, 'data')
+os.makedirs(DATA_DIR, exist_ok=True)
 CLIPS_FILE = os.path.join(DATA_DIR, "clips.json")
-TOKEN_FILE = os.path.join(BASE_DIR, "token.json")
+TOKEN_FILE = os.path.join(APPDATA_DIR, "token.json")
 CLIENT_SECRETS = os.path.join(BASE_DIR, "client_secrets.json")
+SCOPES = ["https://www.googleapis.com/auth/youtube.upload", "https://www.googleapis.com/auth/youtube"]
 
 def get_client_secrets():
     env_secrets = os.environ.get("GOOGLE_CLIENT_SECRETS")

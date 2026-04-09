@@ -1,32 +1,78 @@
+import os
+print(f"EXE DIR: {os.path.dirname(__file__)}")
+print(f"ENV FILE EXISTS: {os.path.exists(os.path.join(os.path.dirname(__file__), '.env'))}")
 from flask import Flask, render_template, jsonify, Response, redirect, session, url_for, request
 import queue
 import threading
-import os
 import json
+import logging
 import time
-from supabase import create_client
-from google_auth_oauthlib.flow import Flow
-import google.oauth2.id_token
-import google.auth.transport.requests
+import sys
+from dotenv import load_dotenv
 
-app = Flask(__name__)
-app.secret_key = os.environ.get("FLASK_SECRET_KEY")
-app.config['SESSION_COOKIE_SECURE'] = True
+# Pfade für PyInstaller korrigieren
+if getattr(sys, 'frozen', False):
+    template_folder = os.path.join(sys._MEIPASS, 'templates')
+    static_folder = os.path.join(sys._MEIPASS, 'static')
+    BASE_DIR = os.path.dirname(sys.executable)
+    app = Flask(__name__, template_folder=template_folder, static_folder=static_folder)
+else:
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+    app = Flask(__name__)
+
+load_dotenv(os.path.join(sys._MEIPASS if getattr(sys, 'frozen', False) else BASE_DIR, ".env"))
+app.secret_key = os.environ.get("FLASK_SECRET_KEY", "dev_key_123")
+app.config['SESSION_COOKIE_SECURE'] = False
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
-os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '0'
+os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
 
 log_queue = queue.Queue()
 
+SESSION_DIR = os.path.join(os.environ.get('LOCALAPPDATA', os.path.expanduser('~')), 'ClipVault')
+SESSION_FILE = os.path.join(SESSION_DIR, 'session.json')
+
+def save_session_to_disk(user_data):
+    try:
+        os.makedirs(SESSION_DIR, exist_ok=True)
+        with open(SESSION_FILE, 'w') as f:
+            json.dump(user_data, f)
+    except Exception as e:
+        logging.error(f"Error saving session: {e}")
+
+def load_session_from_disk():
+    if os.path.exists(SESSION_FILE):
+        try:
+            with open(SESSION_FILE, 'r') as f:
+                return json.load(f)
+        except Exception as e:
+            logging.error(f"Error loading session: {e}")
+    return None
+
+@app.before_request
+def load_persistent_user():
+    if not session.get('user'):
+        user_data = load_session_from_disk()
+        if user_data:
+            session['user'] = user_data
+
 def get_supabase():
+    from supabase import create_client
     url = os.environ.get("SUPABASE_URL")
     key = os.environ.get("SUPABASE_PUBLISHABLE_KEY")
     return create_client(url, key)
 
 def get_flow():
-    client_secrets = json.loads(os.environ.get("GOOGLE_CLIENT_SECRETS"))
-    flow = Flow.from_client_config(
-        client_secrets,
-        scopes=['openid', 'https://www.googleapis.com/auth/userinfo.email', 
+    from google_auth_oauthlib.flow import Flow
+    if getattr(sys, 'frozen', False):
+        secrets_path = os.path.join(sys._MEIPASS, "client_secrets.json")
+    else:
+        secrets_path = os.path.join(BASE_DIR, "client_secrets.json")
+    redirect_uri = "http://127.0.0.1:5005/callback"
+    if request.host and "127.0.0.1" not in request.host and "localhost" not in request.host:
+        redirect_uri = "https://clipvault-4s2f.onrender.com/callback"
+    flow = Flow.from_client_secrets_file(
+        secrets_path,
+        scopes=['openid', 'https://www.googleapis.com/auth/userinfo.email',
                 'https://www.googleapis.com/auth/userinfo.profile'],
         redirect_uri=redirect_uri
     )
@@ -54,13 +100,17 @@ def login():
 def callback():
     if 'code' not in request.args:
         return redirect('/login')
-    
     flow = get_flow()
     flow.code_verifier = session.get('code_verifier')
-    authorization_response = request.url.replace('http://', 'https://')
+    authorization_response = request.url
+    if "localhost" not in request.url:
+        authorization_response = authorization_response.replace('http://', 'https://')
+    import google.auth.transport.requests
+    import google.oauth2.id_token
     flow.fetch_token(authorization_response=authorization_response)
     credentials = flow.credentials
     request_session = google.auth.transport.requests.Request()
+    time.sleep(2)
     id_info = google.oauth2.id_token.verify_oauth2_token(
         credentials.id_token, request_session
     )
@@ -68,11 +118,17 @@ def callback():
         'email': id_info['email'],
         'name': id_info.get('name', id_info['email'])
     }
+    save_session_to_disk(session['user'])
     return redirect('/')
 
 @app.route("/logout")
 def logout():
     session.clear()
+    if os.path.exists(SESSION_FILE):
+        try:
+            os.remove(SESSION_FILE)
+        except Exception as e:
+            logging.error(f"Error removing session file: {e}")
     return redirect('/login')
 
 @app.route("/api/client-secrets")
@@ -88,11 +144,7 @@ def setup_config():
     secret = request.args.get("secret")
     if not email or not secret:
         return jsonify({"error": "unauthorized"}), 401
-    # Verify the token is valid by checking with Google
     try:
-        import google.oauth2.id_token
-        import google.auth.transport.requests
-        # Just return config if email is provided - token was already verified locally
         return jsonify({
             "supabase_url": os.environ.get("SUPABASE_URL"),
             "supabase_key": os.environ.get("SUPABASE_SECRET_KEY"),
@@ -102,7 +154,6 @@ def setup_config():
 
 @app.route("/api/config")
 def get_config():
-    # Only return config if user is logged in
     if not session.get('user'):
         return jsonify({"error": "unauthorized"}), 401
     return jsonify({
@@ -128,6 +179,7 @@ def me():
 
 @app.route("/api/sync", methods=["POST"])
 def sync():
+    import folder_uploader
     threading.Thread(target=folder_uploader.sync_clips).start()
     return jsonify({"status": "syncing"})
 
@@ -142,4 +194,4 @@ def logs():
     return Response(generate(), mimetype="text/event-stream")
 
 if __name__ == "__main__":
-    app.run(debug=False)
+    app.run(debug=False, threaded=True)
