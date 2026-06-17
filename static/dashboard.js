@@ -1,17 +1,101 @@
-let allClips = [];
+/* ── Animated Purple Grid Background ── */
+(function () {
+    const canvas = document.getElementById('grid-canvas');
+    const ctx    = canvas.getContext('2d');
+
+    let W, H;
+    const SPACING = 38;
+    const LINE_COLOR = [124, 58, 237]; // Purple color matching --purple
+    const DOT_COLOR = [168, 85, 247];  // Brighter purple matching --purple-bright
+    
+    // Scrolling offsets
+    let offsetX = 0;
+    let offsetY = 0;
+    
+    // Speed of scrolling (pixels per frame)
+    const SPEED_X = 0.25; 
+    const SPEED_Y = 0.25;
+
+    function resize() {
+        W = canvas.width  = window.innerWidth;
+        H = canvas.height = window.innerHeight;
+    }
+
+    function draw() {
+        ctx.clearRect(0, 0, W, H);
+
+        // Update offsets for scrolling animation
+        offsetX = (offsetX + SPEED_X) % SPACING;
+        offsetY = (offsetY + SPEED_Y) % SPACING;
+
+        // Draw vertical lines
+        const startX = (offsetX - SPACING);
+        ctx.lineWidth = 0.6;
+        ctx.strokeStyle = `rgba(${LINE_COLOR[0]}, ${LINE_COLOR[1]}, ${LINE_COLOR[2]}, 0.08)`;
+        
+        for (let x = startX; x < W + SPACING; x += SPACING) {
+            ctx.beginPath();
+            ctx.moveTo(x, 0);
+            ctx.lineTo(x, H);
+            ctx.stroke();
+        }
+
+        // Draw horizontal lines
+        const startY = (offsetY - SPACING);
+        for (let y = startY; y < H + SPACING; y += SPACING) {
+            ctx.beginPath();
+            ctx.moveTo(0, y);
+            ctx.lineTo(W, y);
+            ctx.stroke();
+        }
+
+        // Draw intersection dots
+        ctx.fillStyle = `rgba(${DOT_COLOR[0]}, ${DOT_COLOR[1]}, ${DOT_COLOR[2]}, 0.25)`;
+        for (let x = startX; x < W + SPACING; x += SPACING) {
+            for (let y = startY; y < H + SPACING; y += SPACING) {
+                ctx.beginPath();
+                ctx.arc(x, y, 1.2, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        // Floating ambient glow orbs (large, slow moving)
+        const time = Date.now() * 0.0005;
+        for (let i = 0; i < 3; i++) {
+            const ox = (W * 0.2 + i * W * 0.3) + Math.sin(time + i * 2.1) * 80;
+            const oy = (H * 0.35 + i * H * 0.12) + Math.cos(time * 1.1 + i * 1.4) * 60;
+            const grad = ctx.createRadialGradient(ox, oy, 0, ox, oy, 260 + i * 60);
+            grad.addColorStop(0, `rgba(120, 40, 240, ${0.045 + i * 0.012})`);
+            grad.addColorStop(1, 'rgba(0,0,0,0)');
+            ctx.beginPath();
+            ctx.arc(ox, oy, 320 + i * 60, 0, Math.PI * 2);
+            ctx.fillStyle = grad;
+            ctx.fill();
+        }
+
+        requestAnimationFrame(draw);
+    }
+
+    window.addEventListener('resize', resize);
+    resize();
+    draw();
+})();
+
+/* ── App Logic ── */
+let allClips  = [];
 let activeGame = 'all';
 
 async function load() {
     const res = await fetch('/api/clips');
-    allClips = await res.json();
-    
+    allClips  = await res.json();
+
     const userRes = await fetch('/api/me');
-    const user = await userRes.json();
+    const user    = await userRes.json();
     if (user) {
         const name = user.name.split(' ')[0];
         document.getElementById('username').textContent = name + "'s";
     }
-    
+
     renderStats();
     renderFilters();
     renderGrid();
@@ -23,8 +107,8 @@ async function sync() {
 }
 
 function renderStats() {
-    const total = allClips.length;
-    const games = [...new Set(allClips.map(c => c.game))].length;
+    const total  = allClips.length;
+    const games  = [...new Set(allClips.map(c => c.game))].length;
     const latest = allClips.length ? allClips[allClips.length - 1].uploaded_at.split('T')[0] : '—';
     document.getElementById('stats').innerHTML = `
         <div class="stat">
@@ -43,7 +127,7 @@ function renderStats() {
 }
 
 function renderFilters() {
-    const games = [...new Set(allClips.map(c => c.game))];
+    const games  = [...new Set(allClips.map(c => c.game))];
     const counts = {};
     allClips.forEach(c => counts[c.game] = (counts[c.game] || 0) + 1);
 
@@ -62,7 +146,7 @@ function renderFilters() {
 
 function renderGrid() {
     const filtered = activeGame === 'all' ? allClips : allClips.filter(c => c.game === activeGame);
-    const reversed = [...filtered].reverse();
+    const reversed  = [...filtered].reverse();
 
     if (!reversed.length) {
         document.getElementById('grid').innerHTML = '<div class="empty">NO CLIPS YET</div>';
@@ -103,7 +187,7 @@ function closeModal() {
     document.getElementById('modal-iframe').src = '';
 }
 
-document.getElementById('modal').addEventListener('click', function(e) {
+document.getElementById('modal').addEventListener('click', function (e) {
     if (e.target === this) closeModal();
 });
 

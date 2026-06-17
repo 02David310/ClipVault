@@ -17,12 +17,12 @@ SolidCompression=yes
 WizardStyle=modern
 
 [Files]
-; These are the files from your 'dist' folder after running PyInstaller
-Source: "c:\Users\botow\_python\ClipVault\dist\.env"; DestDir: "{app}"; Flags: ignoreversion
-Source: "c:\Users\botow\_python\ClipVault\dist\client_secrets.json"; DestDir: "{app}"; Flags: ignoreversion
 Source: "c:\Users\botow\_python\ClipVault\dist\ClipVault.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "c:\Users\botow\_python\ClipVault\dist\ClipVaultWatcher.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "c:\Users\botow\_python\ClipVault\dist\ClipVaultStatus.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "c:\Users\botow\_python\ClipVault\dist\ClipVaultSetup.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "c:\Users\botow\_python\ClipVault\dist\.env"; DestDir: "{app}"; Flags: ignoreversion
+Source: "c:\Users\botow\_python\ClipVault\dist\client_secrets.json"; DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]
 Name: "{group}\ClipVault"; Filename: "{app}\ClipVault.exe"
@@ -32,7 +32,7 @@ Name: "{autodesktop}\ClipVault"; Filename: "{app}\ClipVault.exe"
 Name: "{userstartup}\ClipVaultWatcher"; Filename: "{app}\ClipVaultWatcher.exe"
 
 [Run]
-; Launch the components immediately after installation
+Filename: "{app}\ClipVaultSetup.exe"; Description: "Complete ClipVault Setup"; Flags: postinstall skipifsilent waituntilterminated
 Filename: "{app}\ClipVaultStatus.exe"; Description: "Start Status Monitor"; Flags: nowait postinstall skipifsilent
 Filename: "{app}\ClipVaultWatcher.exe"; Description: "Start Watcher Service"; Flags: nowait postinstall skipifsilent
 Filename: "{app}\ClipVault.exe"; Description: "Launch ClipVault Dashboard"; Flags: nowait postinstall skipifsilent

@@ -3,14 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <title>ClipVault</title>
-    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/static/dashboard.css">
 </head>
 <body>
 
+<canvas id="grid-canvas"></canvas>
+
 <header>
-    <div class="logo"><span id="username" style="color: #ffffff;">...</span>&nbsp;<span style="color: #cc0000;">Clips</span></div>
-    <a href="/logout" style="color: #666; font-size: 12px; text-decoration: none; letter-spacing: 1px;">LOGOUT</a>
+    <div class="logo"><span id="username" style="color:#ffffff">...</span>&nbsp;<span class="accent">Clips</span></div>
+    <a href="/logout">LOGOUT</a>
 </header>
 
 <div class="container">

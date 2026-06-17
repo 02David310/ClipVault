@@ -20,7 +20,7 @@ else:
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
     app = Flask(__name__)
 
-load_dotenv(os.path.join(sys._MEIPASS if getattr(sys, 'frozen', False) else BASE_DIR, ".env"))
+load_dotenv(os.path.join(BASE_DIR, ".env"))
 app.secret_key = os.environ.get("FLASK_SECRET_KEY", "dev_key_123")
 app.config['SESSION_COOKIE_SECURE'] = False
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
@@ -58,7 +58,7 @@ def load_persistent_user():
 def get_supabase():
     from supabase import create_client
     url = os.environ.get("SUPABASE_URL")
-    key = os.environ.get("SUPABASE_PUBLISHABLE_KEY")
+    key = os.environ.get("SUPABASE_SECRET_KEY")  # fix here
     return create_client(url, key)
 
 def get_flow():
@@ -112,7 +112,7 @@ def callback():
     request_session = google.auth.transport.requests.Request()
     time.sleep(2)
     id_info = google.oauth2.id_token.verify_oauth2_token(
-        credentials.id_token, request_session
+        credentials.id_token, request_session, clock_skew_in_seconds=10
     )
     session['user'] = {
         'email': id_info['email'],

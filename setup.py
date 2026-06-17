@@ -38,7 +38,7 @@ if not is_admin():
 print("=== ClipVault Setup ===\n")
 
 # Define Installation Directory
-INSTALL_DIR = os.path.join(os.environ['LOCALAPPDATA'], "ClipVault")
+INSTALL_DIR = os.path.join(os.environ.get('PROGRAMFILES(X86)', 'C:\\Program Files (x86)'), 'ClipVault')
 if not os.path.exists(INSTALL_DIR):
     os.makedirs(INSTALL_DIR)
     print(f"Created installation folder: {INSTALL_DIR}")
@@ -112,7 +112,7 @@ request_session = google.auth.transport.requests.Request()
 # Kurze Pause, um minimale Zeitunterschiede zu den Google-Servern auszugleichen
 time.sleep(2)
 id_info = google.oauth2.id_token.verify_oauth2_token(
-    creds.id_token, request_session
+    creds.id_token, request_session, clock_skew_in_seconds=10
 )
 email = id_info['email']
 print(f"\nLogged in as: {email}")
@@ -152,15 +152,6 @@ subprocess.run(["taskkill", "/F", "/IM", "ClipVault.exe", "/T"], capture_output=
 subprocess.run(["taskkill", "/F", "/IM", "ClipVaultUninstall.exe", "/T"], capture_output=True, shell=True)
 
 installed_exes = {}
-for exe_name in ["ClipVaultWatcher.exe", "ClipVault.exe", "ClipVaultStatus.exe", "ClipVaultUninstall.exe"]:
-    src = get_resource_path(exe_name)
-    dst = os.path.join(INSTALL_DIR, exe_name)
-    if os.path.exists(src):
-        shutil.copy2(src, dst)
-        print(f"Installed: {exe_name}")
-        installed_exes[exe_name] = dst
-    else:
-        print(f"⚠ Warning: {exe_name} not found in installer package!")
 
 # Create Desktop Shortcut for ClipVault.exe
 def get_desktop_path():
