@@ -45,11 +45,33 @@ if not os.path.exists(INSTALL_DIR):
 
 script_dir = INSTALL_DIR # Redirect config saves to install dir
 
-# Ask for NVIDIA folder
-nvidia_folder = input("Enter your NVIDIA clips folder path (e.g. C:/Users/YourName/Videos/NVIDIA): ").strip('"')
-while not os.path.isdir(nvidia_folder):
-    print("Folder not found! Try again.")
-    nvidia_folder = input("Enter your NVIDIA clips folder path: ").strip('"')
+# Ask for NVIDIA folder using a GUI dialog or robust console fallback
+def get_nvidia_folder():
+    try:
+        import tkinter as tk
+        from tkinter import filedialog
+        root = tk.Tk()
+        root.withdraw()
+        root.attributes("-topmost", True)
+        print("Please select your NVIDIA clips folder in the file dialog...")
+        folder = filedialog.askdirectory(title="Select your NVIDIA clips folder")
+        if folder and os.path.isdir(folder):
+            return os.path.normpath(folder)
+    except Exception as e:
+        print(f"GUI folder selection failed: {e}")
+        
+    try:
+        folder = input("Enter your NVIDIA clips folder path (e.g. C:/Users/YourName/Videos/NVIDIA): ").strip('"')
+        while not os.path.isdir(folder):
+            print("Folder not found! Try again.")
+            folder = input("Enter your NVIDIA clips folder path: ").strip('"')
+        return folder
+    except Exception as e:
+        default_path = os.path.join(os.environ.get('USERPROFILE', 'C:\\'), 'Videos')
+        print(f"Lost stdin, falling back to default: {default_path}")
+        return default_path
+
+nvidia_folder = get_nvidia_folder()
 
 # OAuth via localhost
 auth_code = [None]
@@ -62,14 +84,29 @@ class CallbackHandler(BaseHTTPRequestHandler):
         if 'code' in params:
             auth_code[0] = self.path
             self.send_response(200)
+            self.send_header('Content-type', 'text/html')
             self.end_headers()
-            self.wfile.write(b"Login successful! You can close this window.")
+            self.wfile.write(b"""
+                <html><body style='background:#0f0f1a;color:#a855f7;font-family:sans-serif;text-align:center;padding-top:80px'>
+                <h2>&#10003; Login successful!</h2>
+                <p>You can now close this tab and return to the setup.</p>
+                </body></html>
+            """)
             auth_done.set()
-        def log_message(self, format, *args):
-            pass  # suppress server logs
+        else:
+            self.send_response(200)
+            self.end_headers()
+
+    def log_message(self, format, *args):
+        pass  # suppress server logs
 
 server = HTTPServer(('localhost', 8765), CallbackHandler)
-server_thread = threading.Thread(target=server.handle_request)
+
+def run_server():
+    while not auth_done.is_set():
+        server.handle_request()
+
+server_thread = threading.Thread(target=run_server, daemon=True)
 server_thread.start()
 
 
@@ -130,7 +167,15 @@ try:
     config = config_response.json()
 except Exception as e:
     print(f"\nError fetching config: {e}")
-    input("\nPress Enter to exit...")
+    try:
+        import tkinter as tk
+        from tkinter import messagebox
+        root = tk.Tk()
+        root.withdraw()
+        root.attributes("-topmost", True)
+        messagebox.showerror("Setup Error", f"Could not fetch config from server:\n\n{e}\n\nPlease check your internet connection and try again.")
+    except Exception:
+        time.sleep(5)
     sys.exit(1)
 
 # Save .env
@@ -197,8 +242,24 @@ print("✓ Auto-start configured via Task Scheduler!")
 
 print("\n✓ Setup complete!")
 
-import_choice = input("\nWould you like to import existing clips from your NVIDIA folder now? (y/n): ").lower()
-if import_choice == 'y':
+def ask_import_choice():
+    try:
+        import tkinter as tk
+        from tkinter import messagebox
+        root = tk.Tk()
+        root.withdraw()
+        root.attributes("-topmost", True)
+        return messagebox.askyesno("Import Clips", "Would you like to import existing clips from your NVIDIA folder now?\n(This might take a while)")
+    except Exception:
+        pass
+
+    try:
+        choice = input("\nWould you like to import existing clips from your NVIDIA folder now? (y/n): ").lower()
+        return choice == 'y'
+    except Exception:
+        return False
+
+if ask_import_choice():
     print("Starting import process... This might take a while.")
     # We can import and call the folder_uploader directly since it's part of the source
     import folder_uploader
@@ -206,4 +267,7 @@ if import_choice == 'y':
     print("✓ Import complete!")
 
 print("\nClipVault will start automatically on next login.")
-input("\nPress Enter to exit...")
+try:
+    input("\nPress Enter to exit...")
+except Exception:
+    time.sleep(3)
